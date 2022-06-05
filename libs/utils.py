@@ -1,9 +1,13 @@
 from qiskit import QuantumCircuit, QuantumRegister, Aer, transpile
 import numpy as np
+from qiskit.test.mock import FakeAlmaden
+from qiskit.providers.aer import AerSimulator
+device_backend = FakeAlmaden()
 
 
 def execute_circuit(qc, shots=1024, device=None):
     device = Aer.get_backend('qasm_simulator') if device is None else device
+    #device = AerSimulator.from_backend(device_backend)
     transpiled_circuit = transpile(qc, device)
     counts = device.run(transpiled_circuit, shots=shots).result().get_counts()
     return counts
