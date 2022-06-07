@@ -22,7 +22,7 @@ Assim a assinatura da mensagem *m* é dada pela mensagem e pela chave privada *s
 
 A segurança desta assinatura é garantida pela função de sentido unico, impedindo a um adversario forjar uma uma chave para uma outra mensagem. 
 
-## Protocolo de Gottesman e Chuang
+## Protocolo de Gottesman e Chuang (GC-QDS)
 
 O protocolo proposto se baseia no classico de Lamport, onde o par de chaves serem de uso unico é garantido pelas propriedades da fisica quantica. De esta forma é preciso a existencia de funções de sentido unico que no artigo discutido são propostas *Quantum Findgerprint*, *Stabilizer states* (Funções propostas para correção de erros) e o caso que vai ser discutido funções de Hash quantico que usam um unico qubit.
 
@@ -46,11 +46,33 @@ Para este caso de estudo só se tem em conta os participantes emisor, Alice e re
 
 ### Verificação
 
-Para verificar a assinatura de uma mensagem de um unico bit
+Para verificar a assinatura de uma mensagem de um unico bit a Alice tem de enviar ao Bob o par *(b,SKb)*, *b:{0,1}* e o Bob vai preparar os estados correspondetes as chaves privadas recebidas como assinaturas, consequentemente aplica o swap test para comparar a semelhança do seu estado preparado com o estado anteriormente recebido como chave publica por parte da Alice. Como foi referido dados os resultados probabilisticos o Bob precisa fazer isto para todo o conjunto de assinaturas (chaves privadas) e chaves publicas.
+
+Os resultados do Swap test vão ser o estado *|0>* quando passa o test e ambos estados são iguais, e *|1>* com uma probabilidade não neglincenciavel se forem diferentes. No caso de se tratar de um dispositivo com ruido existe uma probabilidade extra de mesmo quando os estados serem iguais o swap test falahar. Por tanto para a verificação da assinatura quantica se introduzem certos valores de tolerancia para erros *c1* e *c2*.
+
+- **c1*M:** Numero maximo de erros aceitaveis tal que a assinatura é valida.
+- **c2*M:** Numero maximo de erros permitidos
+
+Onde *M* é o numero total de chaves que contem cada grupo de chaves, desta forma a validez da assinatura parte da contagem de resultados de erros ao swap test para um dos estados *pki* que pertence a *PK* chamado de *r*, assim
+
+- **1-ACC:** *r<c1M*. Quer dizer que o Bob aceita a assinatura como valida e que pelo menos mais uma pessoa a quem foi trasmitidas as chaves publicas de Alice vai aceitar a assinatura.
+- **0-ACC:** *c1M<r<c2M*. O Bob aceita a assinatura mas mais nenhuma pessoa participante ira a aceitar a mesma como valida
+- **REJ:** *r>c2M*. O Bob rejeita a assinatura
+
+Estas respostas se devem ao facto de haver uma propriedade que precisam garantir as assinaturas e é que uma terceira parte possa validar o resultado que o Bob obteve denominado como um juri na literatura.
 
 ### Protocolo
 
 Alice gera o conjunto de chaves *{SK0,SK1}* para a mensagem com o bit a 0 ou 1, e distribui as chaves publicas ao Bob, que no artigo é descrito como um procedimento que precisa o uso de acordo de chaves quantico *(QKD)*, isto no presente analise não foi tido em conta dado que se presupõe a existencia de um canal quantico seguro. Assim Bob recebe as chaves publicas *{PK0, PK1}* e as armazena até ser necesario a sua utilização, pelo que presupõe da existencia de uma memoria quantica sendo uma critica recorrente a esta tecnica. 
+
+Posteriormente quando a Alice envia ao Bob a mensagem *b* e o seu correspondente conjunto de chaves privadas. Posteriormente o Bob aplica o algoritmo de verificação anteriormente descrito. Há que notar que a segurança de este protocolo se baseia novamente na existencia limitada de copias dos estados quanticos tal que um adversario nãp pode obter suficiente informação sobre a chave privada a partir da publica.
+
+## Simulação do protocolo GC-QDS
+
+Como referido anteriormente, toda escolha aleartoria é feita a partir de um circuito quantico em superposição uniforme de estados, assim o circuito que o representa é o seguinte
+
+<img style="width:500px" src="Graficos/quantum_random.png">
+
 
 ## References
 
