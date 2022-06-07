@@ -1,6 +1,7 @@
 # Quantum Digital Signatures
 
-Leander Reascos
+Leander Reascos<br>
+Universidade do Minho, Mestrado em Engenharia Fisica
 
 ## Introdução
 
@@ -32,7 +33,7 @@ Assim dado o teorema da não clonagem o receitor não pode copiar os estados par
 
 ### Quantum Hashing
 
-A função de sentido unico usada se baseia numa rotação a um qubit inicialmente no estado *|0>* dabase computacional. Tal que esta rotação é dada pela chave privada e pelo teorema de Holevo um adversario que tenha acceso a chave publica não pode ter acceso a mais do que *n* bits classicos a partir de *n* qubits assim se o numero de copias dos estados quanticos for limitado sendo *n* menor que o tamnanho das chaves um adversario não lhe é possivel conhecer a chave privada a partir da chave publica.
+A função de sentido unico usada se baseia numa rotação a um qubit inicialmente no estado *|0>* dabase computacional. Tal que esta rotação é dada pela chave privada e pelo teorema de Holevo um adversario que tenha acceso a chave publica não pode ter acceso a mais do que *n* bits classicos a partir de *n* qubits assim se o numero de copias dos estados quanticos for limitado sendo *n* menor que o tamnanho das chaves um adversario não lhe é possivel conhecer a chave privada a partir da chave publica [[3]](/README.md#3-ablayev-farid-and-vasiliev-alexander-quantum-hashing-2013httpsarxivorgabs13104922).
 
 **|pk> = cos O |o> + sin O |1>**
 
@@ -73,8 +74,57 @@ Como referido anteriormente, toda escolha aleartoria é feita a partir de um cir
 
 <img style="width:500px" src="Graficos/quantum_random.png">
 
+Esta geração aleartoria se encontra codificada na função `quantum_random` no ficheiro `libs/quantum_keyGenerator.py` cujos parametros são o numero de bits que vai ter o resultado e o numero de numeros aleartorios que se pretende como resultado. Finalmente o circuito é executado uma vez para cada numero aleartorio pretendido.
+
+Foi desenvolvidos tres objetos, `Alice`, `Bob` e `QDS` (protocolo) que vão itnervir na mensagem assinada e na verificação da mesma, mantendo a notação, Alice envia a mensagem assinada e Bob verifica. O objeto QDS para esta caso cumpre o papel de meio de comunicação tanto quantico como classico.
+
+Há que ter em atenção que a construção deste protocolo em termos de programação podia ser muito mais simplificada, não entanto foi decidido ter este nivel de abstração de forma a recriar de melhor maneira uma situação "real".
+
+Assim, a Alice gera de forma aleartoria o conjunto de numeros aleartorios que correspondem a chave secreta classica usando o algoritmo *quantum_random* anteriormente descrito. Da mesma forma o Bob é inicializado com as tolerancias que tem de suportar o sistema e os canais de comunicação correspondentes, sendo estes representados por registos quanticos e classicos.
+
+Para o procedimento de verificação o Bob conta tambem com registos auxiliares denominados por ancillas. Finalmente o QDS controla o fluxo de comunicação entre ambos elementos em que nenhum deles tem acceso a informação relevante do outro a não ser que tenha existido uma comunicação quantica ou classica na que esta informação foi enviada. 
+
+Como foir eferido anteriormente é um conjunto de chaves que conformam a chave global usada que é enviada da Alice para o Bob e numa situação "real" teria de serem enviadas todas a vez implicando para o presente caso um maior numero de qubits a serem usados, por tanto foi simplificado de forma a que em termos do algoritmo é enviado e verificada um par de chavez de cada vez mas a mensagem não muda.
+
+### Algoritmo Quantico
+
+A simualação da comunicação quantica precisa para o caso em estudo dois qubits para a Alice, um para cada estado quantico correspondente ao bit seja 0 ou 1, 4 qubits para o Bob que representam "a memoria" para receber os estados da Alice, 1 para preaprar o estado a verificar e um qubit auxiliar para realizar a validação. Assim o algoritmo quantico é o seguinte, a Alice preapra as chaves publicas correspondentes as chaves privadas *ki*
+
+<img style="width:400px" src="Graficos/Alice_prepare_state.png">
+
+Posteriormente, a Alice envia os estados que codificam as chaves publicas por um canal de comunicação quantico autenticado entre ela e o Bob, para isto é usada a teleportação intracircuito para o qual dada a medição dos qubits da Alice é necesario aplicar uma correção aos qubits do bob, para o qual é usado um canal de comunicação classico, nesta parte sem aprofundar na teoria se esta a desenvolver uma tecnica simples de QKD.
+
+<img style="width:500px" src="Graficos/Alice_send_pkeys.png">
+
+Finalmente a Alice envia por um canal de comunicação classico a mensagem e a assinatura e dependendu de qual foi a mensagem Bob prepara e realiza o swap test para os estados correspondentes, assim para o caso que recebeu a mensagem com *b=0* temos o seguinte circuito final
+
+<img style="width:500px" src="Graficos/Bob_verify0.png">
+
+## Resultados
+
+Para uma simulação deste protoclo em que cada componente da chave privada tem 20 bits e no total são 30 componentes, da um total de uma chave privada de tamanho de 75 bytes. Em condições perfeitas se obteve:
+
+```
+c1M: 0 c2M: 5.699999637603758
+0.0 1-ACC
+```
+
+Usando um simulador com ruido disponibilizado pela Qiskit
+
+```
+c1M: 1.5 c2M: 5.699999637603758
+8.0 REJ
+```
+
+```
+c1M: 1.5 c2M: 5.699999637603758
+4.0 0-ACC
+```
+
 
 ## References
 
 ### [[1] Gottesman, Daniel and Chuang, Isaac. Quantum Digital Signatures. (2001).](https://arxiv.org/abs/quant-ph/0105032) 
 ### [[2] Roberts, G.L., Lucamarini, M., Yuan, Z.L. et al. Experimental measurement-device-independent quantum digital signatures. Nat Commun 8, 1098 (2017).](https://doi.org/10.1038/s41467-017-01245-5)
+
+### [[3] Ablayev, Farid and Vasiliev, Alexander. Quantum Hashing. (2013)](https://arxiv.org/abs/1310.4922)
