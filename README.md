@@ -1,6 +1,122 @@
 # Quantum Digital Signatures
 
 Leander Reascos<br>
+University of Minho, Master's in Engineering Physics
+
+## Introduction
+
+It has been demonstrated that with the existence of quantum computers large enough in terms of stable qubits, asymmetric cryptography is at great risk. This stems from the fact that, as proven by Shor, problems that are difficult for classical computers and form the basis of asymmetric cryptographic techniques become easily solvable by quantum computers using Shor's algorithm and its variants.
+
+Thus, factorization and discrete logarithm problems can be solved in practical time by quantum computers, compromising all cryptographic techniques that rely on them. This includes digital signatures, which are based on asymmetric key algorithms like RSA.
+
+This creates the need for new cryptographic techniques that ensure the security and properties required for asymmetric cryptography. Hence, *Post Quantum* and *Hybrid* techniques have been proposed, which were covered during the lectures. This paper focuses on a quantum technique, specifically the Quantum Digital Signature (*QDS*).
+
+A quantum cryptographic technique, unlike *Post Quantum* and *Hybrid* techniques, requires both parties involved in communication to have access to quantum devices. Therefore, the *QDS* protocol that will be studied requires an authenticated quantum communication channel and a classical public channel.
+
+To illustrate the basic principle of *QDS*, we will study the protocol proposed by Gottesman and Chuang in 2001 [[1]](/README.md#1-gottesman-daniel-and-chuang-isaac-quantum-digital-signatures-2001httpsarxivorgabsquant-ph0105032). During the research process, no information on experiments using this protocol with quantum computers or simulators was found, only studies using photonic laboratories [[2]](/README.md#2-roberts-gl-lucamarini-m-yuan-zl-et-al-experimental-measurement-device-independent-quantum-digital-signatures-nat-commun-8-1098-2017httpsdoiorg101038s41467-017-01245-5). Therefore, this paper also proposes a simulation of a *QDS* for a single-bit message, combining the theory studied by Gottesman and Chuang [[1]](/README.md#1-gottesman-daniel-and-chuang-isaac-quantum-digital-signatures-2001httpsarxivorgabsquant-ph0105032) with other quantum computing concepts.
+
+## Lamport Signature
+
+The proposed quantum digital signature protocol is based on the classical Lamport signature, where, similar to all studied asymmetric cryptography protocols, a key pair *(pk, sk)* is generated. It also requires the existence of a one-way function *f* such that *pk=f(sk)*.
+
+Thus, the signature of the message *m* is given by the message and the private key *sk* *(m, yk=sk)*, such that the signature verification is *f(yk)=f(sk)=pk*. This implies that this key pair can only be used once, a characteristic guaranteed by the physics behind quantum communication.
+
+The security of this signature is ensured by the one-way function, preventing an adversary from forging a key for another message.
+
+## Gottesman and Chuang Protocol (GC-QDS)
+
+The proposed protocol is based on the classical Lamport signature, where the one-time use of the key pair is guaranteed by the properties of quantum physics. Therefore, one-way functions are needed, and the paper discusses proposals such as *Quantum Fingerprint*, *Stabilizer states* (functions proposed for error correction), and, in the case to be discussed, quantum hashing functions using a single qubit.
+
+Thus, the key pair consists of a randomly generated classical private key *sk* and a quantum public key *|pk>* as the result of the quantum one-way function. Due to the stochastic nature of quantum computing, validation requires multiple copies of the public keys.
+
+According to the no-cloning theorem, the receiver cannot copy the states for verification, so it is the sender's responsibility to create multiple "copies" of the quantum states encoding the public key for different participants in the communication and the receivers.
+
+### Quantum Hashing
+
+The one-way function used is based on a rotation of a qubit initially in the computational basis state *|0>*. This rotation is determined by the private key, and according to Holevo’s theorem, an adversary with access to the public key cannot gain more than *n* classical bits from *n* qubits. Therefore, if the number of copies of quantum states is limited, making *n* smaller than the key size, an adversary cannot determine the private key from the public key [[3]](/README.md#3-ablayev-farid-and-vasiliev-alexander-quantum-hashing-2013httpsarxivorgabs13104922).
+
+**|pk> = cos O |0> + sin O |1>**
+
+**O = sk/N**, where N = 2^L, L: Private key length
+
+### Key Generation
+
+As discussed, for a single-bit message (the case under analysis), a set of private and public keys is needed. Thus, the private key is *SK={sk1, sk2, sk3, ...}* and the public key is *PK={|pk1>, |pk2>, |pk3>, ...}*. Since this is a quantum protocol, quantum properties are used to generate randomness from a quantum uniform superposition state.
+
+For this study, only the sender, Alice, and the receiver, Bob, are considered. If more participants are involved, Alice must create additional copies of the quantum states so that other participants can validate her identity.
+
+### Verification
+
+To verify the signature of a single-bit message, Alice sends Bob the pair *(b,SKb)*, where *b:{0,1}*. Bob prepares the states corresponding to the private keys received as signatures and applies the swap test to compare the similarity between his prepared state and the state previously received as the public key from Alice. As mentioned earlier, Bob must repeat this process for the entire set of signatures (private keys) and public keys due to the probabilistic results.
+
+The swap test yields the state *|0>* when it passes and both states are the same, and *|1>* with a non-negligible probability if they are different. If noise is present, there's a chance the swap test will fail even when the states are identical. Therefore, certain tolerance values *c1* and *c2* are introduced for quantum signature verification.
+
+- **c1M:** Maximum acceptable number of errors for a valid signature.
+- **c2M:** Maximum number of errors allowed.
+
+Where *M* is the total number of keys in each key set. The validity of the signature is determined by counting swap test error results for a state *pki* belonging to *PK*, called *r*, as follows:
+
+- **1-ACC:** *r<c1M*. Bob accepts the signature as valid, and at least one other person who received Alice's public keys will also accept it.
+- **0-ACC:** *c1M<r<c2M*. Bob accepts the signature, but no other participants will.
+- **REJ:** *r>c2M*. Bob rejects the signature.
+
+This ensures a third party can verify Bob's result, a property known as "jury" in the literature.
+
+### Protocol
+
+Alice generates the key sets *{SK0, SK1}* for the bit-0 or bit-1 message and distributes the public keys to Bob. Bob stores the public keys *{PK0, PK1}* for future use, assuming the existence of a quantum memory, which is a common criticism of this technique.
+
+Later, Alice sends Bob the message *b* and the corresponding set of private keys. Bob then applies the verification algorithm described above. The security of this protocol is again based on the limited copies of quantum states, ensuring that an adversary cannot obtain enough information about the private key from the public key.
+
+## GC-QDS Protocol Simulation
+
+As mentioned earlier, all randomness is generated by a quantum circuit in a uniform superposition of states. The circuit that represents this is shown below.
+
+<img style="width:500px" src="Graficos/quantum_random.png">
+
+This random generation is encoded in the `quantum_random` function in the `libs/quantum_keyGenerator.py` file, which takes parameters for the number of bits in the result and the number of random numbers desired. The circuit is executed once for each random number.
+
+Three objects were developed: `Alice`, `Bob`, and `QDS` (protocol), which manage the signed message and its verification. Alice signs the message, and Bob verifies it. The QDS object handles communication between them, both quantum and classical.
+
+Alice generates a set of random numbers corresponding to the classical secret key using the previously described *quantum_random* algorithm. Similarly, Bob is initialized with system tolerances and corresponding communication channels, represented by quantum and classical registers.
+
+To perform verification, Bob also has auxiliary registers called ancillas. Finally, QDS controls the communication flow between both parties, ensuring no one has access to the other’s relevant information unless it has been transmitted through quantum or classical communication.
+
+### Quantum Algorithm
+
+For the simulation of quantum communication in this case, two qubits are required for Alice, one for each quantum state corresponding to bit 0 or 1, four qubits for Bob (representing "memory" for receiving Alice's states), one to prepare the state for verification, and an auxiliary qubit for validation. Alice prepares the public keys corresponding to the private keys *ki*.
+
+## Results
+
+In a perfect simulation of the protocol with each component of the private key having 20 bits and a total of 30 components (resulting in a private key size of 75 bytes), the following outcomes were obtained:
+
+```
+c1M: 0 c2M:
+
+ 10
+Swap Test Results for each public key
+
+Bit0 | 0 | 0 | 0 | 0 | 0 |
+Bit1 | 0 | 0 | 0 | 0 | 0 |
+Errors: 0/30
+```
+
+### Discussion
+
+These results demonstrate the theoretical behavior expected when noise and other error sources are not considered. Under such conditions, Bob can always verify Alice's identity and confirm the message's validity. Further improvements include simulating noisy conditions and performing probabilistic analysis of swap tests to assess protocol performance under less ideal circumstances.
+
+The code for this simulation is attached.
+
+## Conclusion
+
+This paper has successfully illustrated a quantum digital signature protocol and implemented it in a quantum simulator. Although this implementation is simplified, it opens the door for testing quantum cryptographic techniques in real quantum environments. More advanced approaches are possible, and further work could explore variations of the protocol, especially regarding error tolerance and practical quantum memory limitations. 
+
+## References
+
+---
+# Quantum Digital Signatures (Portugues)
+
+Leander Reascos<br>
 Universidade do Minho, Mestrado em Engenharia Fisica
 
 ## Introdução
